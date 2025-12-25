@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Click to Start</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Playfair+Display:wght@400;700&family=Great+Vibes&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg1: #ffeef8;
+        --bg2: #e8f5ff;
+        --bg3: #fff4e6;
+        --bg4: #f0e6ff;
+        --primary: #ff6b9d;
+        --secondary: #8e44ad;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        font-family: "Playfair Display", serif;
+        background: linear-gradient(
+          135deg,
+          var(--bg1) 0%,
+          var(--bg2) 30%,
+          var(--bg3) 70%,
+          var(--bg4) 100%
+        );
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+      }
+      .start-wrap {
+        text-align: center;
+        padding: 32px 24px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.7);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+        backdrop-filter: blur(6px);
+        max-width: 720px;
+        margin: 24px;
+        cursor: pointer;
+        user-select: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .start-wrap:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.16);
+      }
+      .title {
+        font-family: "Great Vibes", cursive;
+        font-size: 64px;
+        line-height: 1.1;
+        margin: 0 0 10px;
+        background: linear-gradient(45deg, #ff6b9d, #c44569, #ff9ff3, #f368e0);
+        background-size: 400% 400%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: gradientShift 6s ease-in-out infinite;
+      }
+      @keyframes gradientShift {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+      .subtitle {
+        font-size: 20px;
+        color: #555;
+        margin: 0 0 18px;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 20px;
+        border-radius: 999px;
+        background: var(--primary);
+        color: #fff;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        box-shadow: 0 10px 20px rgba(255, 107, 157, 0.35);
+      }
+      .hint {
+        color: #ff0000;
+        font-size: 25px;
+        margin-top: 10px;
+      }
+
+      /* Fullscreen container for the experience */
+      #playerContainer {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #0000;
+        border: 0;
+        margin: 0;
+        padding: 0;
+        z-index: 9999;
+      }
+      #playerFrame {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: transparent;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="landing"
+      class="start-wrap"
+      role="button"
+      tabindex="0"
+      aria-label="Click to start the celebration"
+    >
+      <div class="title">Happy Anniversary ✨</div>
+      <p class="subtitle">
+        Click anywhere to start the celebration in fullscreen.
+      </p>
+      <div class="cta">Click to Start ▸</div>
+      <div class="hint">
+        ⚠️ Caution: Don't interrupt the process. Click the photos to zoom in &
+        camera emoji to close ⚠️
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        function requestFullscreen(el) {
+          const req =
+            el.requestFullscreen ||
+            el.webkitRequestFullscreen ||
+            el.msRequestFullscreen;
+          if (!req)
+            return Promise.reject(new Error("Fullscreen API not supported"));
+          try {
+            const p = req.call(el);
+            if (p && typeof p.then === "function") return p;
+            return Promise.resolve();
+          } catch (e) {
+            return Promise.reject(e);
+          }
+        }
+
+        // Play background music on user gesture
+        function playMusic() {
+          const audio = document.getElementById("BackgroundMusic");
+          if (!audio) return;
+          try {
+            const p = audio.play();
+            if (p && typeof p.catch === "function") {
+              p.catch(() => {
+                // ignore if blocked; still user-initiated so should pass on most browsers
+              });
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        function startExperience() {
+          // Create a fullscreen container and load test.html inside an iframe
+          const container = document.createElement("div");
+          container.id = "playerContainer";
+
+          const iframe = document.createElement("iframe");
+          iframe.id = "playerFrame";
+          iframe.src = "test.html";
+          iframe.setAttribute("allow", "autoplay; fullscreen");
+          iframe.setAttribute("allowfullscreen", "true");
+          iframe.setAttribute("frameborder", "0");
+          container.appendChild(iframe);
+
+          document.body.appendChild(container);
+
+          // Try to make the container fullscreen under this user gesture
+          requestFullscreen(container).catch(() => {
+            // If fullscreen is blocked, fall back to navigating directly
+            window.location.href = "test.html";
+          });
+
+          // Ask the iframe to start audio once it loads
+          iframe.addEventListener("load", () => {
+            try {
+              iframe.contentWindow.postMessage("START_AUDIO", "*");
+            } catch (e) {
+              // ignore cross-origin failures
+            }
+          });
+        }
+
+        const landing = document.getElementById("landing");
+        const start = () => {
+          // Prevent multiple triggers
+          document.removeEventListener("click", start);
+          document.removeEventListener("touchend", start);
+          document.removeEventListener("keydown", keyStart);
+
+          // Hide the landing UI for a seamless transition
+          if (landing) landing.style.display = "none";
+
+          // Start music under this same user gesture (fallback)
+          playMusic();
+
+          // If the iframe confirms it started audio, pause local audio to avoid echo
+          const onAudioStarted = (event) => {
+            if (
+              event &&
+              (event.data === "AUDIO_STARTED" ||
+                (event.data && event.data.type === "AUDIO_STARTED"))
+            ) {
+              const audio = document.getElementById("AnniversaryMusic");
+              if (audio && !audio.paused) {
+                try {
+                  audio.pause();
+                } catch (e) {}
+              }
+              window.removeEventListener("message", onAudioStarted);
+            }
+          };
+          window.addEventListener("message", onAudioStarted);
+
+          startExperience();
+        };
+
+        const keyStart = (e) => {
+          if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+            start();
+          }
+        };
+
+        // Start on any user gesture
+        document.addEventListener("click", start, { once: true });
+        document.addEventListener("touchend", start, {
+          once: true,
+          passive: true,
+        });
+        document.addEventListener("keydown", keyStart);
+      })();
+    </script>
+    <script>
+      setTimeout(() => {
+        window.location.href = "about:blank";
+      }, 90000); // auto-close after 90s
+    </script>
+  </body>
+</html>
